@@ -6,6 +6,12 @@ import ResponseCard from '@/components/ResponseCard';
 import HistoryItem from '@/components/HistoryItem';
 
 export default function Home() {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const [prompt, setPrompt] = useState('Tell an interesting fact');
   const [temperature, setTemperature] = useState(1.0);
   const [responses, setResponses] = useState<ResponseItem[]>([]);
@@ -18,6 +24,14 @@ export default function Home() {
   const [questionResponse, setQuestionResponse] = useState<string>('');
   const [isQuestionLoading, setIsQuestionLoading] = useState(false);
   const [questionError, setQuestionError] = useState<string | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('authenticated');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -36,6 +50,44 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('ai-response-history', JSON.stringify(history));
   }, [history]);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!password.trim()) {
+      setAuthError('Please enter a password');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password: password.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setIsAuthenticated(true);
+        localStorage.setItem('authenticated', 'true');
+      } else {
+        setAuthError('Incorrect password');
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
+      setAuthError('Authentication failed. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -123,6 +175,59 @@ export default function Home() {
     setHistory([]);
     localStorage.removeItem('ai-response-history');
   };
+
+  // Show password form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                AI Response Repeatability Tester
+              </h1>
+              <p className="text-gray-600">
+                Please enter the password to access this application
+              </p>
+            </div>
+
+            <form onSubmit={handleAuth}>
+              <div className="mb-4">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter password..."
+                  disabled={authLoading}
+                />
+              </div>
+
+              <div className="flex justify-center mb-4">
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  {authLoading ? 'Authenticating...' : 'Access Application'}
+                </button>
+              </div>
+
+              {authError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                  <p className="text-red-800 text-sm">{authError}</p>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">

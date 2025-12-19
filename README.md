@@ -45,11 +45,13 @@ Create a `.env.local` file in the root directory:
 ```bash
 API_KEY=your_openai_api_key_here
 SECOND_API_KEY=your_second_openai_api_key_here
+PASSWORD=your_password_here
 ```
 
-Replace the placeholders with your actual OpenAI API keys:
+Replace the placeholders with your actual values:
 - `API_KEY`: Used for the 6-response repeatability tester
 - `SECOND_API_KEY`: Used for single question mode
+- `PASSWORD`: Password required to access the application
 
 ### 3. Run the Development Server
 
@@ -60,6 +62,10 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## How It Works
+
+### Authentication
+1. **Password Required**: Upon visiting the site, users must enter the correct password
+2. **Session Persistence**: Authentication is stored in localStorage and persists across browser sessions
 
 ### 6-Response Repeatability Tester
 1. **Input**: Enter a prompt and adjust the temperature using the slider
@@ -88,6 +94,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Uses `SECOND_API_KEY` environment variable
 - Uses the system prompt: "Respond in no more than 10 words."
 - Returns `{ response: string }`
+
+### `/api/auth` endpoint
+- Accepts POST requests with `{ password: string }`
+- Validates password against `PASSWORD` environment variable
+- Returns `{ valid: boolean }`
 
 ## Technology Stack
 
