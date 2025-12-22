@@ -2,13 +2,10 @@ import OpenAI from 'openai';
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateRequest, GenerateResponse, ResponseItem } from '@/lib/types';
 
-const openai = new OpenAI({
-  apiKey: process.env.API_KEY,
-});
-
 const MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'] as const;
 
 async function generateResponse(
+  openai: OpenAI,
   model: string,
   prompt: string,
   temperature: number,
@@ -40,6 +37,10 @@ async function generateResponse(
 
 export async function POST(request: NextRequest) {
   try {
+    const openai = new OpenAI({
+      apiKey: process.env.API_KEY,
+    });
+
     const body: GenerateRequest = await request.json();
     const { prompt, temperature } = body;
 
@@ -55,13 +56,17 @@ export async function POST(request: NextRequest) {
 
     MODELS.forEach(model => {
       // Without seed
-      promises.push(generateResponse(model, prompt, temperature, false));
+      promises.push(generateResponse(openai, model, prompt, temperature, false));
       // With seed
-      promises.push(generateResponse(model, prompt, temperature, true));
+      promises.push(generateResponse(openai, model, prompt, temperature, true));
     });
 
     // Add the Andrey API response
     const andreyApiPromise = (async () => {
+      const andreyOpenai = new OpenAI({
+        apiKey: process.env.SECOND_API_KEY,
+      });
+
       const messages = [
         { role: 'system' as const, content: 'Отвечай на русском языке' },
         { role: 'user' as const, content: prompt },
@@ -76,7 +81,7 @@ export async function POST(request: NextRequest) {
       // Add random seed
       params.seed = Math.floor(Math.random() * 1_000_000_000);
 
-      const completion = await openai.chat.completions.create(params);
+      const completion = await andreyOpenai.chat.completions.create(params);
 
       return {
         model: 'Andrey API',
