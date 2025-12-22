@@ -4,14 +4,9 @@ import { useState, useEffect } from 'react';
 import { ResponseItem, HistoryEntry } from '@/lib/types';
 import ResponseCard from '@/components/ResponseCard';
 import HistoryItem from '@/components/HistoryItem';
+import QuestionResponse from '@/components/QuestionResponse';
 
 export default function Home() {
-  // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
   const [prompt, setPrompt] = useState('Tell an interesting fact');
   const [temperature, setTemperature] = useState(1.0);
   const [responses, setResponses] = useState<ResponseItem[]>([]);
@@ -24,14 +19,6 @@ export default function Home() {
   const [questionResponse, setQuestionResponse] = useState<string>('');
   const [isQuestionLoading, setIsQuestionLoading] = useState(false);
   const [questionError, setQuestionError] = useState<string | null>(null);
-
-  // Check authentication on mount
-  useEffect(() => {
-    const authStatus = localStorage.getItem('authenticated');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -50,44 +37,6 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('ai-response-history', JSON.stringify(history));
   }, [history]);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!password.trim()) {
-      setAuthError('Please enter a password');
-      return;
-    }
-
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: password.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.valid) {
-        setIsAuthenticated(true);
-        localStorage.setItem('authenticated', 'true');
-      } else {
-        setAuthError('Incorrect password');
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setAuthError('Authentication failed. Please try again.');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -176,96 +125,6 @@ export default function Home() {
     localStorage.removeItem('ai-response-history');
   };
 
-  const exportHistory = async () => {
-    if (history.length === 0) {
-      alert('No history to export');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/export', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          history,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Export failed');
-      }
-
-      // Create blob from response and download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ai-response-history-${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Export error:', error);
-      alert('Failed to export history. Please try again.');
-    }
-  };
-
-  // Show password form if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                AI Response Repeatability Tester
-              </h1>
-              <p className="text-gray-600">
-                Please enter the password to access this application
-              </p>
-            </div>
-
-            <form onSubmit={handleAuth}>
-              <div className="mb-4">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter password..."
-                  disabled={authLoading}
-                />
-              </div>
-
-              <div className="flex justify-center mb-4">
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                >
-                  {authLoading ? 'Authenticating...' : 'Access Application'}
-                </button>
-              </div>
-
-              {authError && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <p className="text-red-800 text-sm">{authError}</p>
-                </div>
-              )}
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -325,11 +184,7 @@ export default function Home() {
                 <h3 className="text-sm font-semibold text-gray-800 mb-2">
                   Response (GPT-4o-mini with random seed)
                 </h3>
-                <div className="bg-white rounded p-3 min-h-[40px]">
-                  <p className="text-gray-700 text-sm leading-relaxed">
-                    {questionResponse}
-                  </p>
-                </div>
+                <QuestionResponse response={questionResponse} />
               </div>
             )}
           </div>
@@ -407,21 +262,12 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">History</h2>
-              <div className="flex gap-2">
-                <button
-                  onClick={exportHistory}
-                  disabled={history.length === 0}
-                  className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Export to Excel
-                </button>
-                <button
-                  onClick={clearHistory}
-                  className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
-                >
-                  Clear History
-                </button>
-              </div>
+              <button
+                onClick={clearHistory}
+                className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+              >
+                Clear History
+              </button>
             </div>
             <div className="space-y-4">
               {history.map((item) => (

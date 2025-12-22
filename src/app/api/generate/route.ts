@@ -15,7 +15,7 @@ async function generateResponse(
   seedUsed: boolean
 ): Promise<ResponseItem> {
   const messages = [
-    { role: 'system' as const, content: 'Respond in no more than 10 words.' },
+    { role: 'system' as const, content: 'Отвечай на русском языке' },
     { role: 'user' as const, content: prompt },
   ];
 

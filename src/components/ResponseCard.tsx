@@ -9,6 +9,7 @@ interface ResponseCardProps {
 
 export default function ResponseCard({ response }: ResponseCardProps) {
   const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -23,6 +24,15 @@ export default function ResponseCard({ response }: ResponseCardProps) {
   const getModelLabel = () => {
     const baseName = response.model;
     return response.seedUsed ? `${baseName} with random seed` : baseName;
+  };
+
+  const isLongResponse = response.response.length > 100;
+  const displayText = expanded || !isLongResponse
+    ? response.response
+    : response.response.substring(0, 100) + '...';
+
+  const toggleExpanded = () => {
+    setExpanded(!expanded);
   };
 
   return (
@@ -49,8 +59,16 @@ export default function ResponseCard({ response }: ResponseCardProps) {
       </div>
       <div className="bg-gray-50 rounded p-3 min-h-[60px]">
         <p className="text-gray-700 text-sm leading-relaxed">
-          {response.response}
+          {displayText}
         </p>
+        {isLongResponse && (
+          <button
+            onClick={toggleExpanded}
+            className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
+          >
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
       </div>
     </div>
   );

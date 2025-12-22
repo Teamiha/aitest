@@ -8,7 +8,6 @@ A web application that tests the consistency/repeatability of OpenAI language mo
 - **Single Question Mode**: Ask individual questions using GPT-4o-mini with random seeds (uses separate API key)
 - **Temperature Control**: Adjustable temperature slider (0.0 - 2.0) shared across all API calls
 - **Response History**: Stores and displays previous runs in localStorage
-- **Export to Excel**: Download history data as a formatted Excel spreadsheet
 - **Clean UI**: Responsive design with Tailwind CSS
 - **Copy Functionality**: Copy individual responses with one click
 - **Error Handling**: Comprehensive error handling and loading states
@@ -46,13 +45,11 @@ Create a `.env.local` file in the root directory:
 ```bash
 API_KEY=your_openai_api_key_here
 SECOND_API_KEY=your_second_openai_api_key_here
-PASSWORD=your_password_here
 ```
 
-Replace the placeholders with your actual values:
+Replace the placeholders with your actual OpenAI API keys:
 - `API_KEY`: Used for the 6-response repeatability tester
 - `SECOND_API_KEY`: Used for single question mode
-- `PASSWORD`: Password required to access the application
 
 ### 3. Run the Development Server
 
@@ -63,10 +60,6 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## How It Works
-
-### Authentication
-1. **Password Required**: Upon visiting the site, users must enter the correct password
-2. **Session Persistence**: Authentication is stored in localStorage and persists across browser sessions
 
 ### 6-Response Repeatability Tester
 1. **Input**: Enter a prompt and adjust the temperature using the slider
@@ -80,11 +73,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 1. **Input**: Enter a question in the single question field
 2. **Generation**: Click "Ask Question" to get a response from GPT-4o-mini with a random seed
 3. **Display**: Response is shown immediately below the input field
-
-### Export Functionality
-1. **Export History**: Click "Export to Excel" in the History section
-2. **Automatic Download**: Excel file downloads with date-stamped filename
-3. **Data Format**: Each response becomes a row with columns for timestamp, prompt, temperature, model, seed usage, and response text
 
 ## API Details
 
@@ -101,24 +89,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Uses the system prompt: "Respond in no more than 10 words."
 - Returns `{ response: string }`
 
-### `/api/auth` endpoint
-- Accepts POST requests with `{ password: string }`
-- Validates password against `PASSWORD` environment variable
-- Returns `{ valid: boolean }`
-
-### `/api/export` endpoint
-- Accepts POST requests with `{ history: HistoryEntry[] }`
-- Generates Excel file with flattened history data
-- Returns Excel file as downloadable attachment
-- Columns: Timestamp, Prompt, Temperature, Model, SeedUsed, Response
-
 ## Technology Stack
 
 - **Next.js 14+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **OpenAI API** for language model interactions
-- **xlsx** for Excel file generation
 - **React Hooks** for state management
 
 ## Browser Support
