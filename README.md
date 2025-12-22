@@ -8,6 +8,7 @@ A web application that tests the consistency/repeatability of OpenAI language mo
 - **Single Question Mode**: Ask individual questions using GPT-4o-mini with random seeds (uses separate API key)
 - **Temperature Control**: Adjustable temperature slider (0.0 - 2.0) shared across all API calls
 - **Response History**: Stores and displays previous runs in localStorage
+- **Export to Excel**: Download history data as a formatted Excel spreadsheet
 - **Clean UI**: Responsive design with Tailwind CSS
 - **Copy Functionality**: Copy individual responses with one click
 - **Error Handling**: Comprehensive error handling and loading states
@@ -80,6 +81,11 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 2. **Generation**: Click "Ask Question" to get a response from GPT-4o-mini with a random seed
 3. **Display**: Response is shown immediately below the input field
 
+### Export Functionality
+1. **Export History**: Click "Export to Excel" in the History section
+2. **Automatic Download**: Excel file downloads with date-stamped filename
+3. **Data Format**: Each response becomes a row with columns for timestamp, prompt, temperature, model, seed usage, and response text
+
 ## API Details
 
 ### `/api/generate` endpoint
@@ -100,12 +106,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Validates password against `PASSWORD` environment variable
 - Returns `{ valid: boolean }`
 
+### `/api/export` endpoint
+- Accepts POST requests with `{ history: HistoryEntry[] }`
+- Generates Excel file with flattened history data
+- Returns Excel file as downloadable attachment
+- Columns: Timestamp, Prompt, Temperature, Model, SeedUsed, Response
+
 ## Technology Stack
 
 - **Next.js 14+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **OpenAI API** for language model interactions
+- **xlsx** for Excel file generation
 - **React Hooks** for state management
 
 ## Browser Support

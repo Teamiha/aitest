@@ -176,6 +176,43 @@ export default function Home() {
     localStorage.removeItem('ai-response-history');
   };
 
+  const exportHistory = async () => {
+    if (history.length === 0) {
+      alert('No history to export');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          history,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Create blob from response and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ai-response-history-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export history. Please try again.');
+    }
+  };
+
   // Show password form if not authenticated
   if (!isAuthenticated) {
     return (
@@ -370,12 +407,21 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">History</h2>
-              <button
-                onClick={clearHistory}
-                className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
-              >
-                Clear History
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={exportHistory}
+                  disabled={history.length === 0}
+                  className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Export to Excel
+                </button>
+                <button
+                  onClick={clearHistory}
+                  className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+                >
+                  Clear History
+                </button>
+              </div>
             </div>
             <div className="space-y-4">
               {history.map((item) => (
