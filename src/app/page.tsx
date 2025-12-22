@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { ResponseItem, HistoryEntry } from '@/lib/types';
 import ResponseCard from '@/components/ResponseCard';
 import HistoryItem from '@/components/HistoryItem';
-import QuestionResponse from '@/components/QuestionResponse';
 
 export default function Home() {
   const [prompt, setPrompt] = useState('Tell an interesting fact');
@@ -14,11 +13,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Question functionality state
-  const [question, setQuestion] = useState('What is the capital of France?');
-  const [questionResponse, setQuestionResponse] = useState<string>('');
-  const [isQuestionLoading, setIsQuestionLoading] = useState(false);
-  const [questionError, setQuestionError] = useState<string | null>(null);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -85,44 +79,47 @@ export default function Home() {
     }
   };
 
-  const handleAskQuestion = async () => {
-    if (!question.trim()) {
-      setQuestionError('Please enter a question');
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem('ai-response-history');
+  };
+
+  const exportHistory = async () => {
+    if (history.length === 0) {
+      alert('No history to export');
       return;
     }
 
-    setIsQuestionLoading(true);
-    setQuestionError(null);
-    setQuestionResponse('');
-
     try {
-      const response = await fetch('/api/ask', {
+      const response = await fetch('/api/export', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          question: question.trim(),
+          history,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error('Export failed');
       }
 
-      const data = await response.json();
-      setQuestionResponse(data.response);
-    } catch (err) {
-      console.error('Error asking question:', err);
-      setQuestionError('Failed to get response. Please check your second API key and try again.');
-    } finally {
-      setIsQuestionLoading(false);
+      // Create blob from response and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ai-response-history-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export history. Please try again.');
     }
-  };
-
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem('ai-response-history');
   };
 
   return (
@@ -135,59 +132,6 @@ export default function Home() {
           <p className="text-gray-600">
             Test the consistency of OpenAI models by generating responses with and without random seeds
           </p>
-        </div>
-
-        {/* Question Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Ask a Single Question
-            </h2>
-            <p className="text-gray-600 text-sm">
-              Get a response from GPT-4o-mini with a random seed using your second API key
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-2">
-                Question
-              </label>
-              <input
-                id="question"
-                type="text"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your question here..."
-              />
-            </div>
-
-            <div className="flex justify-center">
-              <button
-                onClick={handleAskQuestion}
-                disabled={isQuestionLoading}
-                className="px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              >
-                {isQuestionLoading ? 'Asking...' : 'Ask Question'}
-              </button>
-            </div>
-
-            {questionError && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-red-800 text-sm">{questionError}</p>
-              </div>
-            )}
-
-            {questionResponse && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-800 mb-2">
-                  Response (GPT-4o-mini with random seed)
-                </h3>
-                <QuestionResponse response={questionResponse} />
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Input Section */}
@@ -262,12 +206,21 @@ export default function Home() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">History</h2>
-              <button
-                onClick={clearHistory}
-                className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
-              >
-                Clear History
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={exportHistory}
+                  disabled={history.length === 0}
+                  className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Export to Excel
+                </button>
+                <button
+                  onClick={clearHistory}
+                  className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors duration-200"
+                >
+                  Clear History
+                </button>
+              </div>
             </div>
             <div className="space-y-4">
               {history.map((item) => (

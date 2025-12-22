@@ -4,10 +4,10 @@ A web application that tests the consistency/repeatability of OpenAI language mo
 
 ## Features
 
-- **6 Simultaneous Responses**: Generates responses from 3 OpenAI models (gpt-4o, gpt-4o-mini, gpt-3.5-turbo), each with and without random seeds
-- **Single Question Mode**: Ask individual questions using GPT-4o-mini with random seeds (uses separate API key)
+- **7 Simultaneous Responses**: Generates responses from 3 OpenAI models (gpt-4o, gpt-4o-mini, gpt-3.5-turbo), each with and without random seeds, plus an additional "Andrey API" response using a separate API key
 - **Temperature Control**: Adjustable temperature slider (0.0 - 2.0) shared across all API calls
 - **Response History**: Stores and displays previous runs in localStorage
+- **Export to Excel**: Download history data as a formatted Excel spreadsheet
 - **Clean UI**: Responsive design with Tailwind CSS
 - **Copy Functionality**: Copy individual responses with one click
 - **Error Handling**: Comprehensive error handling and loading states
@@ -61,13 +61,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## How It Works
 
-### 6-Response Repeatability Tester
+### 7-Response Repeatability Tester
 1. **Input**: Enter a prompt and adjust the temperature using the slider
-2. **Generation**: Click "Generate Responses" to trigger 6 parallel API calls:
+2. **Generation**: Click "Generate Responses" to trigger 7 parallel API calls:
    - 3 models without seeds (deterministic)
    - 3 models with random seeds (variable)
+   - 1 additional "Andrey API" response using a separate API key
 3. **Display**: Responses are displayed in a responsive grid with clear labeling
 4. **History**: All runs are saved to localStorage and displayed below
+5. **Export**: Use "Export to Excel" to download all history data as a formatted spreadsheet
 
 ### Single Question Mode
 1. **Input**: Enter a question in the single question field
@@ -80,7 +82,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Accepts POST requests with `{ prompt: string, temperature: number }`
 - Makes 6 parallel OpenAI API calls using `Promise.all`
 - Uses the system prompt: "Respond in no more than 10 words."
-- Returns `{ responses: ResponseItem[] }`
+- Returns `{ responses: ResponseItem[] }` (7 responses total)
+
+### `/api/export` endpoint
+- Accepts POST requests with `{ history: HistoryEntry[] }`
+- Generates Excel file with flattened history data
+- Returns Excel file as downloadable attachment
+- Columns: Timestamp, Prompt, Temperature, Model, SeedUsed, Response
 
 ### `/api/ask` endpoint
 - Accepts POST requests with `{ question: string }`
@@ -95,6 +103,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **OpenAI API** for language model interactions
+- **xlsx** for Excel file generation
 - **React Hooks** for state management
 
 ## Browser Support
